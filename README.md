@@ -1,0 +1,1 @@
+# aixin-electrical-schematic-style
