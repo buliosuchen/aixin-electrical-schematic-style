@@ -169,28 +169,33 @@ def func_box(ax, x, y, w, h, rows):
                 ha="center", va="center", fontproperties=fp)
 
 
-def relay_coil(ax, x, y, code="-DJ1", spec="DC24V 1CO", brand="RSL1PVBU"):
-    """继电器线圈符号(A1/A2)。"""
+def relay_coil(ax, x, y, code="-DJ1", spec="DC24V 1CO", brand="RSL1PVBU",
+             tag_xy=None):
+    """继电器线圈符号(A1/A2)。tag_xy 为代号标注位置, 缺省在符号左上。"""
     ax.add_patch(Rectangle((x - 0.18, y - 0.12), 0.36, 0.24,
                            fill=False, ec=BLUE, lw=1.2))
     ax.text(x + 0.24, y + 0.02, "A1", fontsize=7, color=BLACK,
             ha="left", va="center", fontproperties=FP_REG)
     ax.text(x + 0.24, y - 0.22, "A2", fontsize=7, color=BLACK,
             ha="left", va="center", fontproperties=FP_REG)
-    device_tag(ax, x - 0.55, y + 0.28, code, spec, brand, size=9)
+    tx, ty = tag_xy if tag_xy else (x - 0.55, y + 0.28)
+    device_tag(ax, tx, ty, code, spec, brand, size=9)
 
 
-def relay_contact(ax, x, y, n1="11", n2="14", xref_page=""):
-    """继电器常开触点(11/14)+绿色交叉引用。"""
-    ax.plot([x, x + 0.35], [y, y], color=RED, lw=1.4)
-    ax.plot([x + 0.35, x + 0.5], [y, y + 0.12], color=RED, lw=1.4)
-    ax.text(x - 0.06, y + 0.06, n1, fontsize=7, color=BLACK, ha="right",
-            fontproperties=FP_REG)
-    ax.text(x - 0.06, y - 0.12, n2, fontsize=7, color=BLACK, ha="right",
-            fontproperties=FP_REG)
+def relay_contact(ax, x, y, n1="11", n2="14", xref_page="", size=0.42):
+    """IEC 60617 动合触点(横向导线, 11/14)+绿色交叉引用。
+    左固定触点(圆点), 动触点自右枢轴(圆点)向左上张开。"""
+    ax.plot([x], [y], marker="o", ms=5, mfc=RED, mec=RED, mew=0)
+    ax.plot([x + size], [y], marker="o", ms=5, mfc=RED, mec=RED, mew=0)
+    ax.plot([x + size, x + size * 0.18], [y, y + size * 0.62],
+            color=RED, lw=1.6)
+    ax.text(x - 0.07, y + 0.07, n1, fontsize=7, color=BLACK, ha="right",
+            va="bottom", fontproperties=FP_REG)
+    ax.text(x + size + 0.07, y + 0.07, n2, fontsize=7, color=BLACK, ha="left",
+            va="bottom", fontproperties=FP_REG)
     if xref_page:
-        ax.text(x + 0.55, y - 0.10, xref_page, fontsize=7.5, color=GREEN,
-                fontproperties=FP_REG)
+        ax.text(x + size + 0.07, y - 0.13, xref_page, fontsize=7.5,
+                color=GREEN, ha="left", va="top", fontproperties=FP_REG)
 
 
 def motor_symbol(ax, x, y, code="-M1", spec="380V 0.55KW 1.5A 3~", func="转阀",
@@ -236,3 +241,40 @@ def io_module_frame(ax, x, y, w, h, code, order, kind, brand="SIEMENS"):
             fontproperties=FP_REG)
     ax.text(x + w - 0.1, y + 0.10, brand, fontsize=10, color=BLUE, ha="right",
             fontproperties=FP_REG)
+
+
+# ---------------- IEC 60617 标准符号(纵向导线) ----------------
+
+def _cdot(ax, x, y, ms=5):
+    """触点圆点(固定/枢轴)。"""
+    ax.plot([x], [y], marker="o", ms=ms, mfc=RED, mec=RED, mew=0)
+
+
+def iec_breaker_v(ax, x, y, t_top="1", t_bot="2", size=0.20):
+    """IEC 60617 断路器触点(纵向导线)。
+    (x, y) 为触点中心; 上固定触点(圆点), 动触点自下枢轴(圆点)向左上张开,
+    枢轴处 × 形标记表示自动脱扣。调用者需把导线在触点处断开、分段绘制。"""
+    yt, yb = y + size * 0.62, y - size * 0.62
+    _cdot(ax, x, yt)
+    _cdot(ax, x, yb)
+    ax.plot([x, x - size * 1.15], [yb, yt + size * 0.18], color=RED, lw=1.7)
+    d = size * 0.30
+    ax.plot([x - d, x + d], [yb - d, yb + d], color=RED, lw=1.3)
+    ax.plot([x - d, x + d], [yb + d, yb - d], color=RED, lw=1.3)
+    ax.text(x + 0.10, yt + 0.09, t_top, fontsize=7, color=BLACK,
+            ha="left", va="bottom", fontproperties=FP_REG)
+    ax.text(x + 0.10, yb - 0.09, t_bot, fontsize=7, color=BLACK,
+            ha="left", va="top", fontproperties=FP_REG)
+
+
+def iec_no_contact_v(ax, x, y, t_top="1", t_bot="2", size=0.18):
+    """IEC 60617 动合触点(纵向导线): 接触器主触点等, 无 × 标记。
+    画法同 iec_breaker_v, 仅省略自动脱扣标记。"""
+    yt, yb = y + size * 0.62, y - size * 0.62
+    _cdot(ax, x, yt)
+    _cdot(ax, x, yb)
+    ax.plot([x, x - size * 1.15], [yb, yt + size * 0.18], color=RED, lw=1.7)
+    ax.text(x + 0.10, yt + 0.09, t_top, fontsize=7, color=BLACK,
+            ha="left", va="bottom", fontproperties=FP_REG)
+    ax.text(x + 0.10, yb - 0.09, t_bot, fontsize=7, color=BLACK,
+            ha="left", va="top", fontproperties=FP_REG)
